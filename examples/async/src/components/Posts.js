@@ -2,11 +2,26 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 const Posts = ({posts}) => (
-  <ul>
+  <table className="table">
+    <thead>
+    <tr>
+      {posts[0].map((post, i) =>
+        <th key={i}>{post}</th>
+      )}
+    </tr>
+    </thead>
+    <tbody>
     {posts.map((post, i) =>
-      <li key={i}>{post.title}</li>
+      (i > 0) ? (
+        <tr key={i}>
+          {post.map((val, j) =>
+            <td key={j}>{val}</td>
+          )}
+        </tr>
+      ) : null
     )}
-  </ul>
+    </tbody>
+  </table>
 )
 
 Posts.propTypes = {

@@ -1,13 +1,14 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-import { selectReddit, fetchPostsIfNeeded, invalidateReddit } from '../actions'
+import { selectApi, fetchPostsIfNeeded, invalidateApi } from '../actions'
 import Picker from '../components/Picker'
 import Posts from '../components/Posts'
+import Chart from 'chart.js'
 
 class App extends Component {
   static propTypes = {
-    selectedReddit: PropTypes.string.isRequired,
+    selectedApi: PropTypes.string.isRequired,
     posts: PropTypes.array.isRequired,
     isFetching: PropTypes.bool.isRequired,
     lastUpdated: PropTypes.number,
@@ -15,37 +16,82 @@ class App extends Component {
   }
 
   componentDidMount() {
-    const { dispatch, selectedReddit } = this.props
-    dispatch(fetchPostsIfNeeded(selectedReddit))
+    const { dispatch, selectedApi } = this.props
+    dispatch(fetchPostsIfNeeded(selectedApi))
+    //testfn(this.props.posts)
   }
+
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.selectedReddit !== this.props.selectedReddit) {
-      const { dispatch, selectedReddit } = nextProps
-      dispatch(fetchPostsIfNeeded(selectedReddit))
+    if (nextProps.selectedApi !== this.props.selectedApi) {
+      const { dispatch, selectedApi } = nextProps
+      dispatch(fetchPostsIfNeeded(selectedApi))
     }
+    //this.testfn(this.props.posts)
   }
 
-  handleChange = nextReddit => {
-    this.props.dispatch(selectReddit(nextReddit))
+  handleChange = nextApi => {
+    this.props.dispatch(selectApi(nextApi))
   }
 
   handleRefreshClick = e => {
     e.preventDefault()
 
-    const { dispatch, selectedReddit } = this.props
-    dispatch(invalidateReddit(selectedReddit))
-    dispatch(fetchPostsIfNeeded(selectedReddit))
+    const { dispatch, selectedApi } = this.props
+    dispatch(invalidateApi(selectedApi))
+    dispatch(fetchPostsIfNeeded(selectedApi))
   }
 
   render() {
-    const { selectedReddit, posts, isFetching, lastUpdated } = this.props
+    const { selectedApi, posts, isFetching, lastUpdated } = this.props
+    var timeseries = posts.slice(1,20);
+    var labels = timeseries.map((post, i) => post[0]);
+    var dataClose = timeseries.map((post, i) => post[5]);
+    var dataOpen = timeseries.map((post, i) => post[1]);
+    var ctx = document.getElementById("chart1").getContext("2d");
+		ctx.canvas.width = 1000;
+		ctx.canvas.height = 300;
+    var color = Chart.helpers.color;
+    var red = 'rgb(255, 99, 132)';
+    var blue = 'rgb(54, 162, 235)';
+		var cfg = {
+			type: 'bar',
+			data: {
+				labels: labels,
+				datasets: [
+        {
+					label: "Closing price",
+					data: dataClose,
+					type: 'bar',
+					pointRadius: 0,
+					fill: false,
+					lineTension: 0,
+          backgroundColor: color(red).alpha(0.5).rgbString(),
+          borderColor: red,
+          borderWidth: 2
+				},
+        {
+          label: "Opening price",
+          data: dataOpen,
+          type: 'bar',
+          pointRadius: 0,
+          fill: false,
+          lineTension: 0,
+          backgroundColor: color(blue).alpha(0.5).rgbString(),
+          borderColor: blue,
+          borderWidth: 2
+        }
+      ]
+			}
+		};
+		var chart = new Chart(ctx, cfg);
     const isEmpty = posts.length === 0
     return (
-      <div>
-        <Picker value={selectedReddit}
+      <div style={{margin: "20px 20px 20px 20px"}}>
+        <Picker value={selectedApi}
                 onChange={this.handleChange}
-                options={[ 'reactjs', 'frontend' ]} />
+                options={[ 'BSLGOLDETF', 'BSLNIFTY' ]} />
+        <br />
         <p>
           {lastUpdated &&
             <span>
@@ -54,11 +100,12 @@ class App extends Component {
             </span>
           }
           {!isFetching &&
-            <button onClick={this.handleRefreshClick}>
+            <button className="btn" onClick={this.handleRefreshClick}>
               Refresh
             </button>
           }
         </p>
+        <br />
         {isEmpty
           ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
           : <div style={{ opacity: isFetching ? 0.5 : 1 }}>
@@ -71,18 +118,18 @@ class App extends Component {
 }
 
 const mapStateToProps = state => {
-  const { selectedReddit, postsByReddit } = state
+  const { selectedApi, postsByApi } = state
   const {
     isFetching,
     lastUpdated,
     items: posts
-  } = postsByReddit[selectedReddit] || {
+  } = postsByApi[selectedApi] || {
     isFetching: true,
     items: []
   }
 
   return {
-    selectedReddit,
+    selectedApi,
     posts,
     isFetching,
     lastUpdated
